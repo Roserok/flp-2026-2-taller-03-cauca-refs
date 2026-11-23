@@ -224,107 +224,113 @@ se define por recursión sobre el tipo:
 
 - $v \models \text{num}$ si `(number? v)`.
 - $v \models \text{bool}$ si `(boolean? v)`.
-- $v \models (t_1 * \cdots * t_n \to t)$ si $v = \texttt{clausura}(xs, b, \rho')$,
-  $\lvert xs\rvert = n$ y para todo $w_1, \ldots, w_n$ con $w_i \models t_i$ se
-  cumple que $\text{value-of}(b, \rho'[xs \mapsto w])$ es un valor y es de
-  tipo $t$.
+- $v \models (t_1 \ast \cdots \ast t_n \to t)$ si $v = \mathsf{clausura}(xs, b, \rho')$,
+  $\lvert xs \rvert = n$ y, para todo $w_1, \ldots, w_n$ con $w_i \models t_i$,
+  $\text{value-of}(b, \rho'[xs \mapsto w])$ es un valor y es de tipo $t$.
 
 **Concordancia entre $\rho$ y $\Gamma$.** El ambiente de valores $\rho$
 concuerda con el ambiente de tipos $\Gamma$, y se escribe $\rho \models \Gamma$,
 si para todo identificador $x$ declarado en $\Gamma$ se cumple que $x$ está
 ligado en $\rho$ y $\text{apply-env}(\rho, x) \models \Gamma(x)$. El ambiente
 inicial concuerda con el de tipos inicial: $n, m, p, q, r$ valen números y se
-declaran $\text{num}$.
+declaran como $\text{num}$.
 
-Un hecho auxiliar, **Lema C**: si $\rho \models \Gamma$ y $w_i \models t_i$,
-entonces $\rho[xs \mapsto w] \models \Gamma[xs \mapsto t]$. Se sigue de que la
-extensión da prioridad a las ligaduras nuevas (shadowing) en ambos ambientes
-y de que las ligaduras viejas no cambian.
+**Lema C.** Si $\rho \models \Gamma$ y $w_i \models t_i$, entonces
+$\rho[xs \mapsto w] \models \Gamma[xs \mapsto t]$. Se sigue de que la extensión
+da prioridad a las ligaduras nuevas (shadowing) en ambos ambientes y de que las
+ligaduras anteriores no cambian.
 
 **Propiedad de solidez.** Si $\Gamma \vdash e : t$ y $\rho \models \Gamma$,
-entonces $\text{value-of}(e, \rho)$ es un valor de tipo $t$, es decir
-$\text{value-of}(e, \rho) \models t$. La afirmación incluye que la evaluación
-no falla por un conflicto de tipos. Quedan fuera, por no ser errores de tipo,
-la división por cero y el uso de `mcd` o `mcm` con números no enteros, y si el
-fragmento incluye `letrec` la evaluación puede no terminar; en ese caso la
+entonces $\text{value-of}(e, \rho)$ es un valor de tipo $t$, es decir,
+$\text{value-of}(e, \rho) \models t$. La afirmación incluye que la evaluación no
+falla por un conflicto de tipos. Quedan fuera, por no ser errores de tipo, la
+división por cero y el uso de `mcd` o `mcm` con números no enteros. Si el
+fragmento incluye `letrec`, la evaluación puede no terminar, y en ese caso la
 propiedad se lee "si termina".
 
 **Demostración** por inducción sobre la derivación de $\Gamma \vdash e : t$.
-Se demuestran los casos de `if` y `apply`. Los casos de literales,
-identificador, primitivas, `let` y `proc` siguen el mismo esquema (el de `proc`
-usa el Lema C y la definición de $\models$ para tipos función).
+Se demuestran los casos de `if` y `apply`. Los casos de literal, identificador,
+primitivas, `let` y `proc` siguen el mismo esquema (el de `proc` usa el Lema C
+y la definición de $\models$ para tipos función).
 
 **Caso `if`.** La regla es
 
 $$
-\frac{\Gamma \vdash e_1 : \text{bool} \quad \Gamma \vdash e_2 : t \quad \Gamma \vdash e_3 : t}
-     {\Gamma \vdash \texttt{if } e_1 \texttt{ then } e_2 \texttt{ else } e_3 \texttt{ end} : t}
+\frac{\Gamma \vdash e_1 : \text{bool} \qquad \Gamma \vdash e_2 : t \qquad \Gamma \vdash e_3 : t}
+     {\Gamma \vdash \mathtt{if}\ e_1\ \mathtt{then}\ e_2\ \mathtt{else}\ e_3\ \mathtt{end} : t}
 $$
 
-Sea $\rho \models \Gamma$. Por hipótesis de inducción sobre la premisa de
-$e_1$, $v_1 = \text{value-of}(e_1, \rho) \models \text{bool}$, o sea
-$v_1 \in \{\texttt{\#t}, \texttt{\#f}\}$. Entonces el chequeo `boolean?` del
-intérprete se cumple y no se levanta el error de condición no booleana.
+Sea $\rho \models \Gamma$. Por hipótesis de inducción sobre la premisa de $e_1$,
+$v_1 = \text{value-of}(e_1, \rho) \models \text{bool}$, es decir, $v_1$ es
+$\mathsf{true}$ o es $\mathsf{false}$ (en Racket, `#t` o `#f`). Entonces el
+chequeo `boolean?` del intérprete se cumple y no se levanta el error de
+condición no booleana.
 
-- Si $v_1 = \texttt{\#t}$, el resultado es $\text{value-of}(e_2, \rho)$, que por
+- Si $v_1 = \mathsf{true}$, el resultado es $\text{value-of}(e_2, \rho)$, que por
   hipótesis de inducción sobre $e_2$ es de tipo $t$.
-- Si $v_1 = \texttt{\#f}$, el resultado es $\text{value-of}(e_3, \rho)$, que por
+- Si $v_1 = \mathsf{false}$, el resultado es $\text{value-of}(e_3, \rho)$, que por
   hipótesis de inducción sobre $e_3$ es de tipo $t$.
 
-En ambos casos el resultado es de tipo $t$. Esto es lo que justifica exigir el
-*mismo* tipo $t$ en las dos ramas: el chequeador no sabe cuál se ejecutará, y
-la demostración tampoco necesita saberlo. $\square$
+En ambos casos el resultado es de tipo $t$. Esto justifica exigir el *mismo*
+tipo $t$ en las dos ramas: el chequeador no sabe cuál se ejecutará, y la
+demostración tampoco necesita saberlo.
 
 **Caso `apply`.** La regla es
 
 $$
-\frac{\Gamma \vdash f : (t_1 * \cdots * t_n \to t) \quad \Gamma \vdash e_i : t_i \ \ (1 \le i \le n)}
-     {\Gamma \vdash \texttt{apply } f(e_1, \ldots, e_n) : t}
+\frac{\Gamma \vdash f : (t_1 \ast \cdots \ast t_n \to t) \qquad
+      \Gamma \vdash e_i : t_i \quad (1 \le i \le n)}
+     {\Gamma \vdash \mathtt{apply}\ f(e_1, \ldots, e_n) : t}
 $$
 
 Sea $\rho \models \Gamma$. Por hipótesis de inducción sobre $f$,
-$p = \text{value-of}(f, \rho) \models (t_1 * \cdots * t_n \to t)$. Por la
-definición de $\models$ en tipos función, $p = \texttt{clausura}(xs, b, \rho')$
-con $\lvert xs\rvert = n$. Por lo tanto `procval?` se cumple (no hay error de
-"aplicar un valor que no es un procedimiento") y la cantidad de argumentos
-$n$ coincide con la de parámetros (no hay error de aridad). Por hipótesis de
-inducción sobre cada $e_i$, $w_i = \text{value-of}(e_i, \rho) \models t_i$.
-El intérprete evalúa el cuerpo en $\rho'[xs \mapsto w]$, y la definición de
-$p \models (t_1 * \cdots * t_n \to t)$ aplicada a $w_1, \ldots, w_n$ dice
-justamente que $\text{value-of}(b, \rho'[xs \mapsto w]) \models t$. $\square$
+$p = \text{value-of}(f, \rho) \models (t_1 \ast \cdots \ast t_n \to t)$. Por la
+definición de $\models$ para tipos función, $p = \mathsf{clausura}(xs, b, \rho')$
+con $\lvert xs \rvert = n$. Por lo tanto el operador sí es un procedimiento (no
+hay error de "aplicar un valor que no es un procedimiento") y la cantidad de
+argumentos coincide con la de parámetros (no hay error de aridad).
+
+Por hipótesis de inducción sobre cada $e_i$,
+$w_i = \text{value-of}(e_i, \rho) \models t_i$. En este fragmento no hay
+referencias, así que copiar un argumento por valor deja el mismo valor. El
+intérprete evalúa el cuerpo en $\rho'[xs \mapsto w]$, y la definición de
+$p \models (t_1 \ast \cdots \ast t_n \to t)$, aplicada a $w_1, \ldots, w_n$, dice
+justamente que $\text{value-of}(b, \rho'[xs \mapsto w]) \models t$.
 
 **Qué se rompe al agregar referencias.** Con el almacén, el enunciado ya no
 puede hablar solo de $\rho$ y $\Gamma$, por tres razones:
 
-1. **Ser de tipo $\text{refto}(t)$ depende del almacén.** Una referencia
-   $\ell$ es de tipo $\text{refto}(t)$ si $\ell$ nombra una celda existente
-   *y* esa celda contiene un valor de tipo $t$; es decir, $\ell \models_\sigma \text{refto}(t)$
+1. **Ser de tipo $\text{refto}(t)$ depende del almacén.** Una referencia $\ell$
+   es de tipo $\text{refto}(t)$ si nombra una celda existente *y* esa celda
+   contiene un valor de tipo $t$. Es decir, $\ell \models_\sigma \text{refto}(t)$
    exige $\ell \in \text{dom}(\sigma)$ y $\sigma(\ell) \models_\sigma t$. La
    relación $v \models t$ pasa a ser $v \models_\sigma t$.
-2. **Evaluar cambia el almacén.** La evaluación toma un par
-   $(\rho, \sigma)$ y produce un par $(v, \sigma')$. La propiedad debe
-   asegurar que $\sigma'$ sigue siendo coherente con los tipos: hace falta una
-   *tipificación del almacén* $\Sigma$ que asigna un tipo a cada celda, con
-   $\sigma \models \Sigma$ si cada celda guarda un valor del tipo que $\Sigma$
-   le asigna. El enunciado se vuelve: si $\Gamma \vdash e : t$,
-   $\rho \models_\sigma \Gamma$ y $\sigma \models \Sigma$, entonces
-   $\text{value-of}(e, \rho, \sigma) = (v, \sigma')$ y existe $\Sigma' \supseteq \Sigma$
-   con $\sigma' \models \Sigma'$ y $v \models_{\sigma'} t$.
-3. **Los alias exigen que cada celda tenga un único tipo para siempre.** Si
-   dos nombres comparten la celda $\ell$ (`let otro = celda`), una escritura
-   por uno se ve por el otro. Por eso la regla de `setref` exige
-   $\Gamma \vdash e_2 : t$ cuando $e_1 : \text{refto}(t)$ y la de `swap` exige
-   el mismo $t$ en las dos referencias: así una celda no cambia de tipo a
-   mitad de ejecución y las demás variables que la alias-an siguen siendo
-   de tipo $\text{refto}(t)$. `newref` extiende $\Sigma$ con la celda nueva, y
-   que $\Sigma' \supseteq \Sigma$ funciona porque el almacén solo crece
+2. **Evaluar cambia el almacén.** La evaluación toma un par $(\rho, \sigma)$ y
+   produce un par $(v, \sigma')$, y hay que asegurar que $\sigma'$ sigue siendo
+   coherente con los tipos. Para eso hace falta una *tipificación del almacén*
+   $\Sigma$ que asigne un tipo a cada celda: $\sigma \models \Sigma$ significa
+   que cada celda guarda un valor del tipo que $\Sigma$ le asigna. El enunciado
+   se vuelve: si $\Gamma \vdash e : t$, $\rho \models_\sigma \Gamma$ y
+   $\sigma \models \Sigma$, entonces $\text{value-of}(e, \rho, \sigma) = (v, \sigma')$
+   y existe $\Sigma' \supseteq \Sigma$ con $\sigma' \models \Sigma'$ y
+   $v \models_{\sigma'} t$. La definición de tipos función también debe
+   cuantificar sobre los almacenes futuros $\Sigma' \supseteq \Sigma$, porque un
+   procedimiento puede llamarse más tarde, cuando el almacén ya creció.
+3. **Los alias exigen que cada celda tenga un único tipo para siempre.** Si dos
+   nombres comparten la celda $\ell$ (`let otro = celda`), una escritura por un
+   nombre se ve por el otro. Por eso la regla de `setref` exige
+   $\Gamma \vdash e_2 : t$ cuando $e_1 : \text{refto}(t)$, y la de `swap` exige el
+   mismo $t$ en las dos referencias: así una celda no cambia de tipo a mitad de
+   ejecución, y los demás nombres que comparten esa celda siguen siendo de tipo
+   $\text{refto}(t)$. `newref` extiende $\Sigma$ con la celda nueva, y que
+   $\Sigma' \supseteq \Sigma$ sea posible se apoya en que el almacén solo crece
    (condición 2 del invariante de 2.1): una referencia válida nunca deja de
    serlo.
 
-Con este enunciado, la demostración sigue siendo por inducción sobre la
-derivación, pero cada caso debe llevar el almacén de entrada y de salida, y
-el orden de evaluación de las subexpresiones pasa a importar
-(`begin` y `setref` evalúan de izquierda a derecha).
+La demostración sigue siendo por inducción sobre la derivación, pero cada caso
+debe llevar el almacén de entrada y el de salida, y el orden de evaluación de
+las subexpresiones pasa a importar (`begin` y `setref` evalúan de izquierda a
+derecha).
 
 ---
 
